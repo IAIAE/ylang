@@ -1,0 +1,23 @@
+{
+  "name": "ylang",
+  "version": "1.0.0",
+  "description": "a webpack based packer for providing sandbox for javascript",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IAIAE/ylang.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/IAIAE/ylang/issues"
+  },
+  "homepage": "https://github.com/IAIAE/ylang#readme",
+  "devDependencies": {
+    "webpack": "^4.41.6"
+  }
+}
