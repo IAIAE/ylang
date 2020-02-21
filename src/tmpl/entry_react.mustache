@@ -1,0 +1,9 @@
+import React from 'react'
+import {loadableComponent} from 'ylang'
+const cmt_promise = import('{{relPath}}')
+const App = loadableComponent(_=>cmt_promise)
+
+React.render(
+    document.getElementByid('{{divId}}'),
+    <App />
+)

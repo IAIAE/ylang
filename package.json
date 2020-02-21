@@ -19,5 +19,9 @@
   "homepage": "https://github.com/IAIAE/ylang#readme",
   "devDependencies": {
     "webpack": "^4.41.6"
+  },
+  "dependencies": {
+    "chalk": "^3.0.0",
+    "mustache": "^4.0.0"
   }
 }
