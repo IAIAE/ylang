@@ -1,6 +1,5 @@
-// @ts-ignore
-import {Packer} from 'ylang'
-import * as path from 'path'
+const {Packer} = require('../src')
+const path = require('path')
 
 let webpackConfig = Packer.externalPackage([
     {req: '@tencent/intpop-base', sign: 'intpop-base'},
@@ -28,5 +27,4 @@ let webpackConfig = Packer.externalPackage([
 })
 
 
-
-export default webpackConfig
+console.info('the webpack config is ', webpackConfig)

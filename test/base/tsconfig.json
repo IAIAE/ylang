@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+      "baseUrl": "./src",
+      "traceResolution": false,
+      "sourceMap": true,
+      "checkJs": false,
+      "jsx": "react",
+      "target": "es5",
+      "module": "esnext",
+      "moduleResolution": "node",
+      "allowSyntheticDefaultImports": true,
+      "noImplicitAny": false,
+      "noUnusedLocals": false,
+      "noUnusedParameters": false,
+      "removeComments": false,
+      "preserveConstEnums": false,
+      "skipLibCheck": true,
+      "lib": [ "dom", "esnext" ],
+      "experimentalDecorators": true
+    },
+    "include": [
+      "./src/**/*"
+    ],
+    "exclude": [
+      "./public/**/*"
+    ]
+}

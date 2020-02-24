@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+      "traceResolution": false,
+      "sourceMap": false,
+      "checkJs": false,
+      "target": "es5",
+      "module": "commonjs",
+      "moduleResolution": "node",
+      "allowSyntheticDefaultImports": true,
+      "noImplicitAny": false,
+      "noUnusedLocals": false,
+      "noUnusedParameters": false,
+      "removeComments": false,
+      "preserveConstEnums": false,
+      "skipLibCheck": true,
+      "lib": [ "dom", "esnext" ],
+      "experimentalDecorators": true
+    },
+    "include": [
+      "./**/*"
+    ],
+    "exclude": [
+      "./public/**/*"
+    ]
+}

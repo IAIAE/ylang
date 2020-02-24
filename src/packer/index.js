@@ -142,7 +142,7 @@ function isNpmPath(req){
 
 class Packer {
     static externalPackage(arr) {
-        return new Packer(exArr)
+        return new Packer(arr)
     }
     static of(){
         return new Packer()
@@ -230,8 +230,8 @@ class Packer {
             config.resolve.plugins.push(new TsconfigPathsPlugin({
                 configFile: option.tsConfigPath
             }))
-            config.extensions.push('.ts')
-            config.extensions.push('.tsx')
+            config.resolve.extensions.push('.ts')
+            config.resolve.extensions.push('.tsx')
             config.plugins.unshift(new ForkTsCheckerWebpackPlugin({
                 checkSyntacticErrors: true
             }))
@@ -249,10 +249,10 @@ class Packer {
             })
             if (option.sandbox) {
                 if (option.customizedTestEntry) {  // 用户手动指定了打包的测试html和入口js
-                    config.entry = option.customerEntry.entry
+                    config.entry = option.customizedTestEntry.entry
                     config.plugins.push(new HtmlWebpackPlugin({
                         title: 'Ylang test entry',
-                        template: option.customerEntry.html,
+                        template: option.customizedTestEntry.html,
                         filename: 'index.html',
                     }))
                 } else if (option.testEntry) {
@@ -293,7 +293,7 @@ class Packer {
                         throw new Error('no supportted option.testEntry type:: ' + option.testEntry)
                     }
                 } else {
-                    throw new Error('when sandbox module is opened in dev env, either option.testEntry or option.customerEntry is needed');
+                    throw new Error('when sandbox module is opened in dev env, either option.testEntry or option.customizedTestEntry is needed');
                 }
             } else {
                 config.entry = option.entry
@@ -326,10 +326,10 @@ class Packer {
                 if (option.customizedTestEntry) {  
                     // 用户手动指定了打包的测试html和入口js
                     // 如果是prod环境，最好禁止用自定义的entry，因为会出错（比如没有用动态import什么的），最好用Ylang自动生成的。
-                    config.entry = option.customerEntry.entry
+                    config.entry = option.customizedTestEntry.entry
                     config.plugins.push(new HtmlWebpackPlugin({
                         title: 'Ylang test entry',
-                        template: option.customerEntry.html,
+                        template: option.customizedTestEntry.html,
                         filename: 'index.html',
                     }))
                 } else if (option.testEntry) {
@@ -369,7 +369,7 @@ class Packer {
                         throw new Error('no supportted option.testEntry type:: ' + option.testEntry)
                     }
                 } else {
-                    throw new Error('when sandbox module is opened in prod env, either option.testEntry or option.customerEntry is needed');
+                    throw new Error('when sandbox module is opened in prod env, either option.testEntry or option.customizedTestEntry is needed');
                 }
             } else {
                 config.entry = option.entry
@@ -409,3 +409,6 @@ class Packer {
 }
 
 
+
+
+module.exports = Packer

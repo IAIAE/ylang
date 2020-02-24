@@ -13,22 +13,15 @@ function idWithSign(id, sign){
 
 function matchSandbox(sandboxConfig, module){
 	// 防止不同pages下面的代码在互不相关的工程下模块名重复
-	let i = 0;
-	for(;i<sandboxConfig.length;i++){
-		let rule = sandboxConfig[i]
-		if(!rule || !rule.root){
-			throw new Error(`${PLUGIN_NAME}:: option.sandbox[${i}].root mustn't be null!!!`)
-		}
-		let dir = rule.root
-		let reg = new RegExp(dir)
-		if(reg.test(module.resource)){
-			break;
-		}
+	let rule = sandboxConfig
+	if(!rule || !rule.root){
+		throw new Error(`${PLUGIN_NAME}:: option.sandbox.root mustn't be null!!!`)
 	}
-	if(i<sandboxConfig.length){
-		return sandboxConfig[i]
+	if(module.resource.indexOf(rule.root) == 0){
+		return sandboxConfig
+	}else{
+		return null
 	}
-	return null;
 }
 
 function isJsFile(path){
@@ -37,12 +30,10 @@ function isJsFile(path){
 
 class SandboxNamedModulePlugin{
 	constructor(options) {
-		if(!options.sandbox || !options.sandbox.length){
+		if(!options.sandbox){
 			throw new Error(PLUGIN_NAME+':: the option.sandbox is required!')
 		}
 		this.options = Object.assign({
-			root: null,
-			sandbox: [],
 			debug: false,
 		}, options);
 	}
@@ -55,7 +46,7 @@ class SandboxNamedModulePlugin{
 			function getHashId(id, exUsedIds){
 				const hash = createHash(hashFunction);
 				hash.update(id);
-				hashId = hash.digest(hashDigest);
+				let hashId = hash.digest(hashDigest);
 				let len = hashDigestLength;
 				let cache = exUsedIds || usedIds
 				while(cache.has(hashId.substr(0, len)))
@@ -103,7 +94,7 @@ class SandboxNamedModulePlugin{
 						let rule = matchSandbox(options.sandbox, module)	
 						if(rule){
 							if(!rule.sign){
-								throw new Error(`${PLUGIN_NAME}:: option.sandbox[${i}].sign mustn't be null!!!!`)
+								throw new Error(`${PLUGIN_NAME}:: option.sandbox.sign mustn't be null!!!!`)
 							}
 							// 这个模块相对沙箱根路径的相对路径，作为模块id
 							let relativeId = module.libIdent({
@@ -128,18 +119,18 @@ class SandboxNamedModulePlugin{
 							if(!isJsFile(absoluteId)){
 								// 非js文件，例如各种loader加载的less\css\html\png文件等等，这种情况不需要给模块id做过多的处理，直接hash即可
 								let hashId = getHashId(absoluteId)
-								module.id = idWithSign(hashId, options.sandbox[0].sign)
+								module.id = idWithSign(hashId, options.sandbox.sign)
 								usedIds.add(hashId)
 							}else if(/node_modules/.test(absoluteId)){
 								// node_modules中的npm包文件，相对node_modules文件夹取id
 								let ind = absoluteId.indexOf('node_modules')
 								let npmRelativePath = '.'+absoluteId.substring(ind)
 								let hashId = getHashId(npmRelativePath)
-								module.id = idWithSign(hashId, options.sandbox[0].sign)
+								module.id = idWithSign(hashId, options.sandbox.sign)
 								usedIds.add(hashId)
 							}else{  // 非npm包文件，这些文件不会被外部ylang包引用，所以，只要取一个唯一id即可
 								let hashId = getHashId(absoluteId)
-								module.id = idWithSign(hashId, options.sandbox[0].sign+'-outer')
+								module.id = idWithSign(hashId, options.sandbox.sign+'-outer')
 								usedIds.add(hashId);
 							}
 						}	
