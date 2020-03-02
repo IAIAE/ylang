@@ -1,2 +1,2 @@
-let t = import('./index');
+let t = import(/* webpackChunkName: "base" */ './index');
 t;

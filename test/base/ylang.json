@@ -1,0 +1,23 @@
+{
+    "env": "prod",
+    "output": {
+        "path": "./dist"
+    },
+    "tsConfig": "./tsconfig.json",
+    "sandbox": {
+        "root": "./src",
+        "main": "./index.tsx",
+        "sign": "base"
+    },
+    "npmExport": [
+        "react",
+        "antd",
+        "moment"
+    ],
+    "customizedTestEntry": {
+        "html": "./src/entry.html",
+        "entry": {
+            "index": "./src/entry.ts"
+        }
+    }
+}

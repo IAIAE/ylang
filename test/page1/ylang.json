@@ -1,0 +1,19 @@
+{
+    "external": [{
+        "sign": "base",
+        "root": "../base/src"
+    }, {
+        "sign": "intpop-ui",
+        "root": "@tenacent/intpop-ui"
+    }],
+    "env": "prod",
+    "output": {
+        "path": "./dist"
+    },
+    "tsConfig": "./tsconfig.json",
+    "sandbox": {
+        "root": "./src",
+        "main": "./index.tsx",
+        "sign": "page1"
+    }
+}

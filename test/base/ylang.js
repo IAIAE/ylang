@@ -1,4 +1,4 @@
-const {Packer} = require('../../src')
+const {Packer} = require('../../../src')
 const path = require('path')
 
 let webpackConfig = Packer.externalPackage([

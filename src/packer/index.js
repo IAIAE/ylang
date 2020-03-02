@@ -11,83 +11,16 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const chalk = require('chalk')
 const util = require('./util')
 const mustache = require('mustache')
+const {getDefaultOption} = require('./option')
+const {ExternalYlang} = require('./external')
+const {readAndParseJson} = require('./fs')
 
-const cmdDir = path.join(process.cwd(), './package.json')
+const cmdDir = process.cwd()
 
-
-
-let defaultOption = {
-    mode: 'none',
-    resolve: {
-        mainFields: ['main'],  // very important!
-        extensions: ['.js', '.jsx']
-    },
-    stats: {
-        warningsFilter: /export .* was not found in/
-    },
-    target: 'web',
-    module: {
-        unknownContextCritical: false,
-        rules: [{
-            test: /\.html$/,
-            use: [{
-                loader: 'html-loader',
-                options: {
-                    // 支持 html `${}` 语法
-                    interpolate: 1,
-                    attrs: ['script:src']
-                }
-            }]
-        }, {
-            test: /(\.js(x?)$|\.ts(x?)$)/,
-            exclude: /node_modules/,
-            use: [
-                { loader: 'babel-loader' },
-                {
-                    loader: 'ts-loader', options: {
-                        transpileOnly: true,
-                    }
-                },
-            ]
-        }, {
-            test: /\.less$/,
-            use: [MiniCssExtractPlugin.loader, {
-                loader: 'css-loader',
-                options: {
-                    modules: {
-                        localIdentName: '[name]_[local]-[hash:base64:5]',
-                    },
-                    localsConvention: 'camelCase',
-                    importLoaders: 2,
-                    sourceMap: false,
-                }
-            }, {
-                loader: 'postcss-loader',
-                options: { sourceMap: true }
-            }, {
-                loader: 'less-loader',
-                options: {
-                    sourceMap: true
-                }
-            }]
-        }, {
-            test: /\.css$/,
-            use: [MiniCssExtractPlugin.loader, 'css-loader']
-        }, {
-            test: /\.(png|jpg|gif|svg|eot|ttf|woff|woff2)$/,
-            loader: 'url-loader',
-            options: {
-                limit: 8192
-            }
-        }]
-    },
-    plugins: [
-        new webpack.NamedChunksPlugin(chunk => (chunk.name || chunk.id)),
-    ]
-}
 
 function checkOption(option) {
     if(!option.output || !option.output.path){ paramNeed('output.path')}
+    if(!option.env){paramNeed('env')}
 }
 
 function paramNeed(key) {
@@ -95,62 +28,38 @@ function paramNeed(key) {
 }
 
 
-class ExternalYlang{
-    constructor(){
-        this.keys = new Set()
-        this.arr = []
-    }
-    add(item){
-        if(this.keys.has(item.req)){return}
-        this.keys.add(item.req)
-        this.arr.push(item)
-    }
-    match(filePath){
-        let i = -1;
-        this.arr.some((item, index)=>{
-            if(filePath.indexOf(item.req) == 0){
-                i = index
-                return true
-            }
-            return false
-        })
-        if(i!=-1){
-            return this.arr[i]
-        }
-        return null
-    }
-    isEmpty(){
-        return this.arr.length == 0
-    }
-}
+
 
 /**
  * 判断是否是npm包的引用
  * @param {*} req 
  */
 function isNpmPath(req){
-    if(path.indexOf('.') == 0){ // 相对路径
+    if(req.indexOf('.') == 0){ // 相对路径
         return false;
-    }else if(path.indexOf(':\\') != -1){ // windows下的绝对路径
+    }else if(req.indexOf(':\\') != -1){ // windows下的绝对路径
         return false
-    }else if(path.indexOf('/') == 0){
+    }else if(req.indexOf('/') == 0){
         return false
     }else{
         return true
     }
 }
 
+
 class Packer {
-    static externalPackage(arr) {
-        return new Packer(arr)
-    }
-    static of(){
-        return new Packer()
-    }
-    constructor(exArr){
-        this.exArr = exArr
-    }
     config(option) {
+        if(!option){
+            let optionObj = readAndParseJson(path.join(cmdDir, './ylang.json'))
+            if(!optionObj){
+                throw new Error('ylang init error => no ylang.json in work_dir')
+            }
+            return this.config(optionObj)
+        }
+        if(typeof option == 'string'){
+            // ylang.json的地址
+            fs.readFileSync(option)
+        }
         /**
          * 打包的目标环境，dev模式基本上可以看成是正常的打包，
          * prod模式会进行sandbox拆分，细节相对复杂得多
@@ -201,7 +110,7 @@ class Packer {
 
         let config = {}
         checkOption(option)
-        config = { ...defaultOption }
+        config = { ...getDefaultOption(option.sandbox)}
 
         config.plugins.unshift(new MiniCssExtractPlugin({
             filename: option.cssFilenamePattern || '[name].sand.[contenthash:10].css'
@@ -381,16 +290,22 @@ class Packer {
                     if(stat.isDirectory()){
                         context = context + '/'
                     }
-                    util.getTheRealFile(context, userRequest).then(filepath=>{
-                        if(!filepath){
-                            throw new Error(`cannot find file to determin weither is external!! context:${context}, userRequest:${userRequest}`)
-                        }
-                        let isExt = ylangExt.match(filepath)
+                    let filepath = util.getTheRealFile(context, userRequest, cmdDir) 
+                    if(!filepath){
+                        // 如果没有，遇到一些情况是第三方npm包中的代码，引用一个根本没有的lib，try一下，如果异常又引用另外一个。这样，总会存在一个userRequest不存在的情况。所以降级一下，如果一个filepath不存在，就监测context是不是external，
+                        let isExt = ylangExt.match(context)
                         if(isExt){
-                            return callback(null, 'root ""') 
+                            return callback(null, 'root ""')
+                        }else{
+                            console.warn(chalk.bgYellow('Ylang WARN ===> ')+`cannot find file to determin weither is external!! context:${context}, userRequest:${userRequest}`)
+                            return callback()
                         }
-                        callback()
-                    }) 
+                    }
+                    let isExt = ylangExt.match(filepath)
+                    if(isExt){
+                        return callback(null, 'root ""') 
+                    }
+                    callback()
                 }]
             }
             config.output = Object.assign({

@@ -1,4 +1,7 @@
+import 'antd/dist/antd.css';
 import React from 'react'
+import antd from 'antd'
+antd;
 const style = require('./index.less')
 
 type Props = {

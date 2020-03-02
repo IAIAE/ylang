@@ -10,12 +10,17 @@ const hashDigestLength = 7
 function idWithSign(id, sign){
 	return sign+'-'+id
 }
-
+const cmdDir = process.cwd()
 function matchSandbox(sandboxConfig, module){
 	// 防止不同pages下面的代码在互不相关的工程下模块名重复
 	let rule = sandboxConfig
 	if(!rule || !rule.root){
 		throw new Error(`${PLUGIN_NAME}:: option.sandbox.root mustn't be null!!!`)
+	}
+	if(!module.resource){
+		// 主要是有些库中的内部引用，一些稀奇古怪的引用方式。我们直接用absoluteId标记就好了
+		// console.info('module.resource is nulll => ', module.request, module.userRequest, absoluteId)
+		return null;
 	}
 	if(module.resource.indexOf(rule.root) == 0){
 		return sandboxConfig
@@ -74,7 +79,7 @@ class SandboxNamedModulePlugin{
 							// 获取这个external模块的路径
 							let userRequest = module.userRequest
 							let context = module.issuer.resource
-							let userReqFilepath = util.getTheRealFile(context, userRequest)	
+							let userReqFilepath = util.getTheRealFile(context, userRequest, cmdDir)
 							let exItem = options.externals.match(userReqFilepath)
 							if(exItem){
 								if(!exUsedIds[exItem.sign]){exUsedIds[exItem.sign] = new Set()}
@@ -89,6 +94,7 @@ class SandboxNamedModulePlugin{
 							return;
 						}
 
+						
 						
 						// 非external模块
 						let rule = matchSandbox(options.sandbox, module)	
@@ -117,7 +123,7 @@ class SandboxNamedModulePlugin{
 						}else{
 							// 文件不在沙箱目录中，分为3种情况
 							if(!isJsFile(absoluteId)){
-								// 非js文件，例如各种loader加载的less\css\html\png文件等等，这种情况不需要给模块id做过多的处理，直接hash即可
+								// 非js文件，例如各种loader加载的less\css\html\png文件等等，也包括webpack编译生成了附加模块，例如（absoluteId=./node_modules/moment/locale sync recursive ^\.\/.*$），这种情况不需要给模块id做过多的处理，直接hash即可
 								let hashId = getHashId(absoluteId)
 								module.id = idWithSign(hashId, options.sandbox.sign)
 								usedIds.add(hashId)

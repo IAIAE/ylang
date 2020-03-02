@@ -1,31 +1,35 @@
 const fs = require('fs')
 const path = require('path')
-const { CachedInputFileSystem, ResolverFactory } = require("enhanced-resolve");
+const resolve = require("enhanced-resolve");
+const chalk = require('chalk')
 
-
-const myResolver = ResolverFactory.createResolver({
-	// Typical usage will consume the `fs` + `CachedInputFileSystem`, which wraps Node.js `fs` to add caching.
-	fileSystem: new CachedInputFileSystem(fs, 4000),
-    extensions: [".js", ".ts", '.jsx', '.tsx'],
+const myResolver = resolve.create.sync({
+	// or resolve.create.sync
+	extensions: [".js", ".ts", '.jsx', '.tsx'],
     mainFields: ['main'],
     modules: ["node_modules"],
     descriptionFiles: ["package.json"],
 });
 
+// const myResolver = ResolverFactory.createResolver({
+// 	// Typical usage will consume the `fs` + `CachedInputFileSystem`, which wraps Node.js `fs` to add caching.
+// 	fileSystem: new CachedInputFileSystem(fs, 4000),
+//     extensions: [".js", ".ts", '.jsx', '.tsx'],
+//     mainFields: ['main'],
+//     modules: ["node_modules"],
+//     descriptionFiles: ["package.json"],
+// });
+
 /**
  * 根据一个局部的文件路径，按照commonjs的模块resolve方式找到对应的文件
  */
 function findFile(context, req){
-    return new Promise((done, notDone)=>{
-        myResolver.resolve({}, context, req, {}, (err, res)=>{
-            if(err){
-                // no such file
-                done(null)
-            }else{
-                done(res)
-            }
-        })
-    })
+    try{
+        return myResolver(context, req)
+    }catch(e){
+        console.warn(chalk.bgYellow('Ylang warn =>')+` cannot resolve file with context:${context} req:${req}`)
+        return null
+    }
 }
 
 /**
@@ -41,19 +45,18 @@ module.exports.getTheRealFile = function getTheRealFile(context, userRequest, cm
     // 2. import t from 'utils' 这样不是相对路径开头的，但是src/下存在同名的目录src/util。就定位到这个目录，去找util/index或者util.js
 
     // 3. import t from 'react' 这样，不是以相对路径开头的，src下也不存在同名的文件夹，就去src/node_modules下去寻找。
-    return new Promise((done, notDone)=>{
-        if(/\.\//.test(userRequest) || /\.\.\//.test(userRequest)){
-            // 第一种情况
-            findFile(context, userRequest).then(done)
+    if(/\.\//.test(userRequest) || /\.\.\//.test(userRequest)){
+        // 第一种情况
+        return findFile(context, userRequest)
+    }else{
+        let filepath = findFile(path.join(cmdDir, './src/'), './'+userRequest)
+        if(filepath){
+            // 第二种情况
+            return filepath
         }else{
-            findFile(path.join(cmdDir, './src/'), './'+userRequest).then(filepath=>{
-                // 第二种情况
-                if(filepath){done(filepath)}
-                else{
-                    // 第三种情况
-                    findFile(context, userRequest).then(done)
-                }
-            })
+            // 第三种情况
+            return findFile(context, userRequest)
         }
-    })
+            
+    }
 }
