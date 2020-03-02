@@ -1,10 +1,7 @@
 {
     "external": [{
         "sign": "base",
-        "root": "../base/src"
-    }, {
-        "sign": "intpop-ui",
-        "root": "@tenacent/intpop-ui"
+        "root": "../base"
     }],
     "env": "prod",
     "output": {

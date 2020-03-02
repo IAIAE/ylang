@@ -13,7 +13,7 @@ const util = require('./util')
 const mustache = require('mustache')
 const {getDefaultOption} = require('./option')
 const {ExternalYlang} = require('./external')
-const {readAndParseJson} = require('./fs')
+const {readAndParseJson, tryReadSync} = require('./fs')
 
 const cmdDir = process.cwd()
 
@@ -32,7 +32,7 @@ function paramNeed(key) {
 
 /**
  * 判断是否是npm包的引用
- * @param {*} req 
+ * @param {*} req
  */
 function isNpmPath(req){
     if(req.indexOf('.') == 0){ // 相对路径
@@ -46,20 +46,120 @@ function isNpmPath(req){
     }
 }
 
+function goDeepExternal(externalItem, ylangFilepath, cmdDir, cache){
+    if(isNpmPath(externalItem.root)){
+        let targetYlang = path.resolve(cmdDir, './node_modules/'+externalItem.root+'/ylang.json')
+        let ylangJson = readAndParseJson(targetYlang)
+        if(!ylangJson || !ylangJson.sandbox || !ylangJson.sandbox.sign || !ylangJson.sandbox.root){
+            throw new Error('ylangjson.sandbox.sign/root must be specified:'+targetYlang)
+        }
+        let targetYlangSandboxRoot = path.resolve(path.dirname(targetYlang), ylangJson.sandbox.root)
+        // 处理自身
+        if(!cache[externalItem.sign]){
+            cache[targetYlangSandboxRoot] = cache[externalItem.sign] = {
+                root: targetYlangSandboxRoot,
+                ylang: targetYlang,
+                sign: externalItem.sign
+            }
+        }
+        // 处理npmExport
+        if(ylangJson.npmExport && ylangJson.npmExport.length){
+            ylangJson.npmExport.forEach(name=>{
+                let npmdir = path.join(cmdDir, './node_modules/'+name)
+                // 每个ylang工程导出的npmExternal不能重复
+                if(cache[npmdir]){
+                    throw new Error(`${targetYlang} wants to export npm package ${name}, where is already externals by ${cache[npmdir].sign}`)
+                }
+                cache[npmdir] = {
+                    root: npmdir,
+                    sign: externalItem.sign
+                }
+            })
+        }
+        if(ylangJson.external && ylangJson.external.length){
+            ylangJson.external.forEach(innerItem=>{
+                if(!isNpmPath(innerItem.root)){
+                    throw new Error('ylang init error::cannot external a relative path in a npm external')
+                }
+                goDeepExternal(innerItem, targetYlang, cmdDir, cache)
+            })
+        }
+    }else{
+        // 相对路径的external
+        let targetYlang = path.resolve(path.dirname(ylangFilepath), externalItem.root+'/ylang.json')
+        let ylangJson = readAndParseJson(targetYlang)
+        if(!ylangJson || !ylangJson.sandbox || !ylangJson.sandbox.sign || !ylangJson.sandbox.root){
+            throw new Error('ylangjson.sandbox.sign/root must be specified:'+targetYlang)
+        }
+        let targetYlangSandboxRoot = path.resolve(path.dirname(targetYlang), ylangJson.sandbox.root)
+        // 处理自身
+        if(!cache[externalItem.sign]){
+            cache[targetYlangSandboxRoot] = cache[externalItem.sign] = {
+                root: targetYlangSandboxRoot,
+                ylang: targetYlang,
+                sign: externalItem.sign
+            }
+        }
+        // 处理npmExport
+        if(ylangJson.npmExport && ylangJson.npmExport.length){
+            ylangJson.npmExport.forEach(name=>{
+                let npmdir = path.join(cmdDir, './node_modules/'+name)
+                // 每个ylang工程导出的npmExternal不能重复
+                if(cache[npmdir]){
+                    throw new Error(`${targetYlang} wants to export npm package ${name}, where is already externals by ${cache[npmdir].sign}`)
+                }
+                cache[npmdir] = {
+                    root: npmdir,
+                    sign: externalItem.sign
+                }
+            })
+        }
+        if(ylangJson.external && ylangJson.external.length){
+            ylangJson.external.forEach(innerItem=>{
+                goDeepExternal(innerItem, targetYlang, cmdDir, cache)
+            })
+        }
+    }
+}
 
 class Packer {
-    config(option) {
+    static config(option, ylangJsonPath) {
         if(!option){
-            let optionObj = readAndParseJson(path.join(cmdDir, './ylang.json'))
+            let ylangJsonPath = path.join(cmdDir, './ylang.json')
+            let optionObj = readAndParseJson(ylangJsonPath)
             if(!optionObj){
                 throw new Error('ylang init error => no ylang.json in work_dir')
             }
-            return this.config(optionObj)
+            return this.config(optionObj, ylangJsonPath)
         }
         if(typeof option == 'string'){
             // ylang.json的地址
-            fs.readFileSync(option)
+            let optionObj = fs.readAndParseJson(option)
+            if(!optionObj){
+                throw new Error(`ylang init error => no ylang.json with path: ${option}`)
+            }
+            return this.config(optionObj, option)
         }
+        if(typeof option != 'object'){
+            throw new Error(`ylang init error => ylang.json must be an object, but get:'${typeof option}'`)
+        }
+        if(!tryReadSync(ylangJsonPath)){
+            throw new Error(`ylang init error => ylangJsonPath invalid. no such file: ${ylangJsonPath}`)
+        }
+
+        let ylangDir = path.dirname(ylangJsonPath)
+        let externalCache = {}
+        if(option.external){
+            // 如果这个工程存在外部引用，去读取外部工程的ylang.json文件，
+            // 目的是根据引用树，生成一个平铺开来的external列表，
+            // 当webpack打包的时候，如果一个模块路径就在以上external列表中，会将对应模块认定为外部的，不去生成具体的模块代码。而是直接require一个模块id，该模块id是按照某种规则固定的。实际程序运行中，该模块id的代码已经加载的，去引用它就不会产生问题。
+            // 这其实就是独立打包，运行时耦合的核心机制
+            option.external.forEach(item=>{
+                goDeepExternal(item, ylangJsonPath, ylangDir, externalCache)
+            })
+        }
+        console.info('externalCache is ', externalCache)
+        return;
         /**
          * 打包的目标环境，dev模式基本上可以看成是正常的打包，
          * prod模式会进行sandbox拆分，细节相对复杂得多
@@ -69,7 +169,7 @@ class Packer {
          * 外部模块的申明
          */
         let exArr = this.exArr || []
-        
+
         let ylangExt = new ExternalYlang();
         if(exArr.length){
             let thisDependencies = JSON.parse(fs.readFileSync(path.join(cmdDir, './package.json'), 'utf-8')).dependencies
@@ -105,7 +205,7 @@ class Packer {
                     // 本地external ylang模块，这种情况是开发者知道某些模块是已经沙箱化的，但是没有发布npm，所以拷贝到本地了。也需要external化
                     ylangExt.add(item)
                 }
-            } 
+            }
         }
 
         let config = {}
@@ -232,7 +332,7 @@ class Packer {
                 ]
             })
             if (option.sandbox) {
-                if (option.customizedTestEntry) {  
+                if (option.customizedTestEntry) {
                     // 用户手动指定了打包的测试html和入口js
                     // 如果是prod环境，最好禁止用自定义的entry，因为会出错（比如没有用动态import什么的），最好用Ylang自动生成的。
                     config.entry = option.customizedTestEntry.entry
@@ -290,7 +390,7 @@ class Packer {
                     if(stat.isDirectory()){
                         context = context + '/'
                     }
-                    let filepath = util.getTheRealFile(context, userRequest, cmdDir) 
+                    let filepath = util.getTheRealFile(context, userRequest, cmdDir)
                     if(!filepath){
                         // 如果没有，遇到一些情况是第三方npm包中的代码，引用一个根本没有的lib，try一下，如果异常又引用另外一个。这样，总会存在一个userRequest不存在的情况。所以降级一下，如果一个filepath不存在，就监测context是不是external，
                         let isExt = ylangExt.match(context)
@@ -303,7 +403,7 @@ class Packer {
                     }
                     let isExt = ylangExt.match(filepath)
                     if(isExt){
-                        return callback(null, 'root ""') 
+                        return callback(null, 'root ""')
                     }
                     callback()
                 }]
