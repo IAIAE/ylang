@@ -57,6 +57,24 @@ module.exports.getTheRealFile = function getTheRealFile(context, userRequest, cm
             // 第三种情况
             return findFile(context, userRequest)
         }
-            
+
     }
+}
+
+
+
+module.exports.pathRoute = function pathRoute(filepath, cmdDir){
+    if(filepath[filepath.length-1]=='/'){
+        filepath = filepath.slice(0, filepath.length-1);
+    }
+    let arr = filepath.split(path.sep)
+    let result = []
+    for(let i= arr.length; i>1; i--){
+        let _path = arr.slice(0, i).join(path.sep)
+        if(cmdDir && cmdDir == _path){
+            break
+        }
+        result.push(_path)
+    }
+    return result
 }

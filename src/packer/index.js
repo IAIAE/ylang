@@ -12,11 +12,11 @@ const chalk = require('chalk')
 const util = require('./util')
 const mustache = require('mustache')
 const {getDefaultOption} = require('./option')
-const {ExternalYlang} = require('./external')
+const {ExternalYlang, goDeepExternal} = require('./external')
 const {readAndParseJson, tryReadSync} = require('./fs')
+const {isNpmPath} = require('./yoyo')
 
 const cmdDir = process.cwd()
-
 
 function checkOption(option) {
     if(!option.output || !option.output.path){ paramNeed('output.path')}
@@ -29,99 +29,6 @@ function paramNeed(key) {
 
 
 
-
-/**
- * 判断是否是npm包的引用
- * @param {*} req
- */
-function isNpmPath(req){
-    if(req.indexOf('.') == 0){ // 相对路径
-        return false;
-    }else if(req.indexOf(':\\') != -1){ // windows下的绝对路径
-        return false
-    }else if(req.indexOf('/') == 0){
-        return false
-    }else{
-        return true
-    }
-}
-
-function goDeepExternal(externalItem, ylangFilepath, cmdDir, cache){
-    if(isNpmPath(externalItem.root)){
-        let targetYlang = path.resolve(cmdDir, './node_modules/'+externalItem.root+'/ylang.json')
-        let ylangJson = readAndParseJson(targetYlang)
-        if(!ylangJson || !ylangJson.sandbox || !ylangJson.sandbox.sign || !ylangJson.sandbox.root){
-            throw new Error('ylangjson.sandbox.sign/root must be specified:'+targetYlang)
-        }
-        let targetYlangSandboxRoot = path.resolve(path.dirname(targetYlang), ylangJson.sandbox.root)
-        // 处理自身
-        if(!cache[externalItem.sign]){
-            cache[targetYlangSandboxRoot] = cache[externalItem.sign] = {
-                root: targetYlangSandboxRoot,
-                ylang: targetYlang,
-                sign: externalItem.sign
-            }
-        }
-        // 处理npmExport
-        if(ylangJson.npmExport && ylangJson.npmExport.length){
-            ylangJson.npmExport.forEach(name=>{
-                let npmdir = path.join(cmdDir, './node_modules/'+name)
-                // 每个ylang工程导出的npmExternal不能重复
-                if(cache[npmdir]){
-                    throw new Error(`${targetYlang} wants to export npm package ${name}, where is already externals by ${cache[npmdir].sign}`)
-                }
-                cache[npmdir] = {
-                    root: npmdir,
-                    sign: externalItem.sign
-                }
-            })
-        }
-        if(ylangJson.external && ylangJson.external.length){
-            ylangJson.external.forEach(innerItem=>{
-                if(!isNpmPath(innerItem.root)){
-                    throw new Error('ylang init error::cannot external a relative path in a npm external')
-                }
-                goDeepExternal(innerItem, targetYlang, cmdDir, cache)
-            })
-        }
-    }else{
-        // 相对路径的external
-        let targetYlang = path.resolve(path.dirname(ylangFilepath), externalItem.root+'/ylang.json')
-        let ylangJson = readAndParseJson(targetYlang)
-        if(!ylangJson || !ylangJson.sandbox || !ylangJson.sandbox.sign || !ylangJson.sandbox.root){
-            throw new Error('ylangjson.sandbox.sign/root must be specified:'+targetYlang)
-        }
-        let targetYlangSandboxRoot = path.resolve(path.dirname(targetYlang), ylangJson.sandbox.root)
-        // 处理自身
-        if(!cache[externalItem.sign]){
-            cache[targetYlangSandboxRoot] = cache[externalItem.sign] = {
-                root: targetYlangSandboxRoot,
-                ylang: targetYlang,
-                sign: externalItem.sign
-            }
-        }
-        // 处理npmExport
-        if(ylangJson.npmExport && ylangJson.npmExport.length){
-            ylangJson.npmExport.forEach(name=>{
-                let npmdir = path.join(cmdDir, './node_modules/'+name)
-                // 每个ylang工程导出的npmExternal不能重复
-                if(cache[npmdir]){
-                    throw new Error(`${targetYlang} wants to export npm package ${name}, where is already externals by ${cache[npmdir].sign}`)
-                }
-                cache[npmdir] = {
-                    root: npmdir,
-                    sign: externalItem.sign
-                }
-            })
-        }
-        if(ylangJson.external && ylangJson.external.length){
-            ylangJson.external.forEach(innerItem=>{
-                goDeepExternal(innerItem, targetYlang, cmdDir, cache)
-            })
-        }
-    }
-}
-
 class Packer {
     static config(option, ylangJsonPath) {
         if(!option){
@@ -132,14 +39,14 @@ class Packer {
             }
             return this.config(optionObj, ylangJsonPath)
         }
-        if(typeof option == 'string'){
-            // ylang.json的地址
-            let optionObj = fs.readAndParseJson(option)
-            if(!optionObj){
-                throw new Error(`ylang init error => no ylang.json with path: ${option}`)
-            }
-            return this.config(optionObj, option)
-        }
+        // if(typeof option == 'string'){
+        //     // ylang.json的地址
+        //     let optionObj = fs.readAndParseJson(option)
+        //     if(!optionObj){
+        //         throw new Error(`ylang init error => no ylang.json with path: ${option}`)
+        //     }
+        //     return this.config(optionObj, option)
+        // }
         if(typeof option != 'object'){
             throw new Error(`ylang init error => ylang.json must be an object, but get:'${typeof option}'`)
         }
@@ -148,6 +55,9 @@ class Packer {
         }
 
         let ylangDir = path.dirname(ylangJsonPath)
+        if(ylangDir != cmdDir){
+            throw new Error('the ylang.json must in the root of workspace')
+        }
         let externalCache = {}
         if(option.external){
             // 如果这个工程存在外部引用，去读取外部工程的ylang.json文件，
@@ -158,18 +68,21 @@ class Packer {
                 goDeepExternal(item, ylangJsonPath, ylangDir, externalCache)
             })
         }
-        console.info('externalCache is ', externalCache)
-        return;
+        // console.info('externalCache is ', externalCache)
+        let ylangExt = option.external? new ExternalYlang({
+            externalOption: option.external,
+            ylangJsonPath: ylangJsonPath,
+            ylangDir: ylangDir
+        }):null;
         /**
          * 打包的目标环境，dev模式基本上可以看成是正常的打包，
          * prod模式会进行sandbox拆分，细节相对复杂得多
          */
         let env = option.env || 'dev'
+
         /**
          * 外部模块的申明
          */
-        let exArr = this.exArr || []
-
         let ylangExt = new ExternalYlang();
         if(exArr.length){
             let thisDependencies = JSON.parse(fs.readFileSync(path.join(cmdDir, './package.json'), 'utf-8')).dependencies
