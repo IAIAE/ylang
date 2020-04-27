@@ -2,6 +2,7 @@
     "compilerOptions": {
       "traceResolution": false,
       "sourceMap": false,
+      "baseUrl": "./src",
       "checkJs": false,
       "target": "es5",
       "module": "commonjs",
@@ -14,12 +15,16 @@
       "preserveConstEnums": false,
       "skipLibCheck": true,
       "lib": [ "dom", "esnext" ],
-      "experimentalDecorators": true
+      "experimentalDecorators": true,
+      "declaration": true,
+      "declarationDir": "./typings",
+      "declarationMap": false,
+      "outDir": "./lib"
     },
     "include": [
-      "./**/*"
+      "./src/**/*"
     ],
     "exclude": [
-      "./public/**/*"
+      "./lib/**/*"
     ]
 }

@@ -1,0 +1,24 @@
+{
+  "name": "ylang-runtime",
+  "version": "0.1.0",
+  "description": "a webpack based packer for providing sandbox for javascript",
+  "main": "lib/index.js",
+  "types": "types/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IAIAE/ylang.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/IAIAE/ylang/issues"
+  },
+  "homepage": "https://github.com/IAIAE/ylang#readme",
+  "dependencies": {
+    "little-loader": "^0.2.0"
+  }
+}

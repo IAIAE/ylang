@@ -4,5 +4,4 @@ Ylang是一个前端javascript打包器，也可以认为是“微前端”的�
 到底什么是“微前端”呢？这个话题不得不在这里讨论一下。todo
 
 # usage
-
-todo
+包含了两个npm包，runtime里面是`ylang-runtime`，而packer里面是`ylang`。
