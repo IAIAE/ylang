@@ -1,23 +1,28 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var little_loader_1 = require("little-loader");
-var ylangChunkLoadCache = {};
+var load_1 = require("./load");
 function loadChunk(config) {
-    return new Promise(function (done, notDone) {
-        if (ylangChunkLoadCache[config.url]) {
-            return done(requireModule(config.module, config.url));
-        }
-        little_loader_1.default(config.url, function (err) {
-            if (err) {
-                console.error('loadjs network error:', err);
-                return done({
-                    ret: 1,
-                    msg: 'loadjs network error',
-                    data: err
-                });
+    return new Promise(function (done) {
+        Promise.all([
+            load_1.loadjs(config.url, config.module),
+            load_1.loadcss(config.cssurl, config.module),
+        ]).then(function (arr) {
+            var jsret = arr[0];
+            var cssret = arr[1];
+            if (jsret.ret == 0 && cssret.ret == 0) {
+                done(requireModule(config.module, config.url));
             }
-            ylangChunkLoadCache[config.url] = true;
-            done(requireModule(config.module, config.url));
+            else if (jsret.ret != 0) {
+                done(jsret);
+            }
+            else if (config.ignoreCssError) {
+                // css加载失败，加载的组件会没有样式，同样渲染。
+                done(requireModule(config.module, config.url));
+            }
+            else {
+                // css 加载失败，不加载组件
+                done(cssret);
+            }
         });
     });
 }

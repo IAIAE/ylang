@@ -4,16 +4,17 @@
   "description": "",
   "main": "ylang.js",
   "scripts": {
-    "build": "webpack --config ./ylang.js",
+    "build": "webpack --config ./webpack.config.js",
+    "start": "webpack --progress --colors --watch --config ./webpack.config.js",
     "test": "node ./ylang.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "antd": "^3.26.12",
-    "react": "^16.12.0",
-    "react-dom": "^16.12.0"
+    "antd": "^3.26.15",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1"
   },
   "devDependencies": {
     "@types/node": "^13.7.4",

@@ -9,4 +9,12 @@ export type loadChunkParameter = {
      * 这个chunk的入口模块名：e.g. cm-web-asn-video-sfdu2
      */
     module: string,
+    /**
+     * 可选，如果这个模块有对应的css，就必须填写这个值
+     */
+    cssurl?: string,
+    /**
+     * 如果css加载失败，还继续加载模块么？
+     */
+    ignoreCssError?: boolean
 }

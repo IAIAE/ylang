@@ -1,25 +1,25 @@
-import loadjs from 'little-loader'
+import {loadcss, loadjs} from './load'
 import {CommonReturn, loadChunkParameter} from './types'
 
-const ylangChunkLoadCache = {}
-
-
 export function loadChunk(config: loadChunkParameter): Promise<CommonReturn>{
-    return new Promise((done, notDone)=>{
-        if(ylangChunkLoadCache[config.url]){
-            return done(requireModule(config.module, config.url))
-        }
-        loadjs(config.url, function(err){
-            if(err){
-                console.error('loadjs network error:', err)
-                return done({
-                    ret: 1,
-                    msg: 'loadjs network error',
-                    data: err
-                })
+    return new Promise((done)=>{
+        Promise.all([
+            loadjs(config.url, config.module),
+            loadcss(config.cssurl, config.module),
+        ]).then(arr=>{
+            let jsret = arr[0]
+            let cssret = arr[1]
+            if(jsret.ret == 0 && cssret.ret == 0){
+                done(requireModule(config.module, config.url))
+            }else if(jsret.ret != 0){
+                done(jsret)
+            }else if(config.ignoreCssError){
+                // css加载失败，加载的组件会没有样式，同样渲染。
+                done(requireModule(config.module, config.url))
+            }else {
+                // css 加载失败，不加载组件
+                done(cssret)
             }
-            ylangChunkLoadCache[config.url] = true;
-            done(requireModule(config.module, config.url))
         })
     })
 }

@@ -19,7 +19,9 @@ class ExternalYlang{
         if(!this.hasEx){
             return null;
         }
+        // console.info('the filePath is ', filePath)
         let route = pathRoute(filePath)
+        // console.info('the path router of '+ filePath, ' is', route)
         for(let i=route.length-1; i>0; i--){
             if(this.cache[route[i]]){
                 return this.cache[route[i]]
@@ -27,18 +29,15 @@ class ExternalYlang{
         }
         return null;
     }
-    isEmpty(){
-        return !this.hasEx == 0
-    }
     getCache(){
         return this.cache
     }
 }
 
 
-module.exports.goDeepExternal = function goDeepExternal(externalItem, ylangFilepath, cmdDir, cache){
+function goDeepExternal(externalItem, ylangFilepath, cmdDir, cache){
     if(isNpmPath(externalItem.root)){
-        let targetYlang = path.resolve(cmdDir, './node_modules/'+externalItem.root+'/ylang.json')
+        let targetYlang = path.resolve(cmdDir, './node_modules/'+externalItem.root+'/ylang.json5')
         let ylangJson = readAndParseJson(targetYlang)
         if(!ylangJson || !ylangJson.sandbox || !ylangJson.sandbox.sign || !ylangJson.sandbox.root){
             throw new Error('ylangjson.sandbox.sign/root must be specified:'+targetYlang)
@@ -76,7 +75,7 @@ module.exports.goDeepExternal = function goDeepExternal(externalItem, ylangFilep
         }
     }else{
         // 相对路径的external
-        let targetYlang = path.resolve(path.dirname(ylangFilepath), externalItem.root+'/ylang.json')
+        let targetYlang = path.resolve(path.dirname(ylangFilepath), externalItem.root+'/ylang.json5')
         let ylangJson = readAndParseJson(targetYlang)
         if(!ylangJson || !ylangJson.sandbox || !ylangJson.sandbox.sign || !ylangJson.sandbox.root){
             throw new Error('ylangjson.sandbox.sign/root must be specified:'+targetYlang)
@@ -93,7 +92,8 @@ module.exports.goDeepExternal = function goDeepExternal(externalItem, ylangFilep
         // 处理npmExport
         if(ylangJson.npmExport && ylangJson.npmExport.length){
             ylangJson.npmExport.forEach(name=>{
-                let npmdir = path.join(cmdDir, './node_modules/'+name)
+                // let npmdir = path.join(cmdDir, './node_modules/'+name)
+                let npmdir = path.join(path.dirname(targetYlang), './node_modules/'+name)
                 // 每个ylang工程导出的npmExternal不能重复
                 if(cache[npmdir]){
                     throw new Error(`${targetYlang} wants to export npm package ${name}, where is already externals by ${cache[npmdir].sign}`)
@@ -112,4 +112,5 @@ module.exports.goDeepExternal = function goDeepExternal(externalItem, ylangFilep
     }
 }
 
+module.exports.goDeepExternal = goDeepExternal
 module.exports.ExternalYlang = ExternalYlang

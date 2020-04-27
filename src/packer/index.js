@@ -32,10 +32,10 @@ function paramNeed(key) {
 class Packer {
     static config(option, ylangJsonPath) {
         if(!option){
-            let ylangJsonPath = path.join(cmdDir, './ylang.json')
+            let ylangJsonPath = path.join(cmdDir, './ylang.json5')
             let optionObj = readAndParseJson(ylangJsonPath)
             if(!optionObj){
-                throw new Error('ylang init error => no ylang.json in work_dir')
+                throw new Error('ylang init error => no ylang.json5 in work_dir')
             }
             return this.config(optionObj, ylangJsonPath)
         }
@@ -58,22 +58,18 @@ class Packer {
         if(ylangDir != cmdDir){
             throw new Error('the ylang.json must in the root of workspace')
         }
-        let externalCache = {}
-        if(option.external){
-            // 如果这个工程存在外部引用，去读取外部工程的ylang.json文件，
-            // 目的是根据引用树，生成一个平铺开来的external列表，
-            // 当webpack打包的时候，如果一个模块路径就在以上external列表中，会将对应模块认定为外部的，不去生成具体的模块代码。而是直接require一个模块id，该模块id是按照某种规则固定的。实际程序运行中，该模块id的代码已经加载的，去引用它就不会产生问题。
-            // 这其实就是独立打包，运行时耦合的核心机制
-            option.external.forEach(item=>{
-                goDeepExternal(item, ylangJsonPath, ylangDir, externalCache)
-            })
-        }
-        // console.info('externalCache is ', externalCache)
+        // 如果这个工程存在外部引用，去读取外部工程的ylang.json文件，
+        // 目的是根据引用树，生成一个平铺开来的external列表，
+        // 当webpack打包的时候，如果一个模块路径就在以上external列表中，会将对应模块认定为外部的，不去生成具体的模块代码。而是直接require一个模块id，该模块id是按照某种规则固定的。实际程序运行中，该模块id的代码已经加载的，去引用它就不会产生问题。
+        // 这其实就是独立打包，运行时耦合的核心机制
         let ylangExt = option.external? new ExternalYlang({
             externalOption: option.external,
             ylangJsonPath: ylangJsonPath,
             ylangDir: ylangDir
         }):null;
+        // let match = ylangExt.match('/Users/richcao/Desktop/career/git/ylang/test/page1/node_modules/moment/test/index.js')
+        // console.info('the match is ', match)
+
         /**
          * 打包的目标环境，dev模式基本上可以看成是正常的打包，
          * prod模式会进行sandbox拆分，细节相对复杂得多
@@ -83,43 +79,43 @@ class Packer {
         /**
          * 外部模块的申明
          */
-        let ylangExt = new ExternalYlang();
-        if(exArr.length){
-            let thisDependencies = JSON.parse(fs.readFileSync(path.join(cmdDir, './package.json'), 'utf-8')).dependencies
+        // let ylangExt = new ExternalYlang();
+        // if(exArr.length){
+        //     let thisDependencies = JSON.parse(fs.readFileSync(path.join(cmdDir, './package.json'), 'utf-8')).dependencies
 
-            // 遍历每个ex，找到req中的模块，读取它的package.json中的dependencies，一直找下去，直到叶子节点。这样就取到了所有外部依赖块儿应用名称的列表
-            for(let i=0;i<exArr.length;i++){
-                let item = exArr[i]
-                if(isNpmPath(item.req)){
-                    let jsonFile = path.join(cmdDir, './node_modules/'+item.req+'/package.json');
-                    if(!fs.existsSync(jsonFile)){
-                        throw new Error(`Ylang externals error:: no ${jsonFile} exist. `)
-                    }
-                    let node_module_dir = path.join(cmdDir, './node_modules')
-                    ylangExt.add({
-                        req: node_module_dir+'/'+item.req,
-                        sign: item.sign,
-                    })
-                    let json = fs.readFileSync(jsonFile, 'utf-8')
-                    json = JSON.parse(json)
-                    Object.keys(json.dependencies).forEach(name=>{
-                        if(thisDependencies[name]){
-                            // 如果本地的package.json存在引用，就不要再吧这个包当做公共的。
-                            console.warn(chalk.bgYellow('Ylang Warn::')+'same_dependencies: '+chalk.green(name)+` reason: node_modules/${item.req} has dependencies:'{name}', and you add dependencies.${name} in your package.json too. this will lead ylang to package ${name}'s code again, where the ${name}'s code is already in ${item.req}'s bundle.`)
-                        }else{
-                            // 本地package.json不存在引用，就将这个包当做externals
-                            ylangExt.add({
-                                req: node_module_dir+'/'+name,
-                                sign: item.sign +'_nm'
-                            })
-                        }
-                    })
-                }else{
-                    // 本地external ylang模块，这种情况是开发者知道某些模块是已经沙箱化的，但是没有发布npm，所以拷贝到本地了。也需要external化
-                    ylangExt.add(item)
-                }
-            }
-        }
+        //     // 遍历每个ex，找到req中的模块，读取它的package.json中的dependencies，一直找下去，直到叶子节点。这样就取到了所有外部依赖块儿应用名称的列表
+        //     for(let i=0;i<exArr.length;i++){
+        //         let item = exArr[i]
+        //         if(isNpmPath(item.req)){
+        //             let jsonFile = path.join(cmdDir, './node_modules/'+item.req+'/package.json');
+        //             if(!fs.existsSync(jsonFile)){
+        //                 throw new Error(`Ylang externals error:: no ${jsonFile} exist. `)
+        //             }
+        //             let node_module_dir = path.join(cmdDir, './node_modules')
+        //             ylangExt.add({
+        //                 req: node_module_dir+'/'+item.req,
+        //                 sign: item.sign,
+        //             })
+        //             let json = fs.readFileSync(jsonFile, 'utf-8')
+        //             json = JSON.parse(json)
+        //             Object.keys(json.dependencies).forEach(name=>{
+        //                 if(thisDependencies[name]){
+        //                     // 如果本地的package.json存在引用，就不要再吧这个包当做公共的。
+        //                     console.warn(chalk.bgYellow('Ylang Warn::')+'same_dependencies: '+chalk.green(name)+` reason: node_modules/${item.req} has dependencies:'{name}', and you add dependencies.${name} in your package.json too. this will lead ylang to package ${name}'s code again, where the ${name}'s code is already in ${item.req}'s bundle.`)
+        //                 }else{
+        //                     // 本地package.json不存在引用，就将这个包当做externals
+        //                     ylangExt.add({
+        //                         req: node_module_dir+'/'+name,
+        //                         sign: item.sign +'_nm'
+        //                     })
+        //                 }
+        //             })
+        //         }else{
+        //             // 本地external ylang模块，这种情况是开发者知道某些模块是已经沙箱化的，但是没有发布npm，所以拷贝到本地了。也需要external化
+        //             ylangExt.add(item)
+        //         }
+        //     }
+        // }
 
         let config = {}
         checkOption(option)
@@ -144,13 +140,11 @@ class Packer {
                 externals: env=='dev'?null:ylangExt
             }))
         }
-        if (option.ts == true) {
-            if (!option.tsConfigPath) {
-                throw new Error(`option.tsConfigPath must be specified when option.ts===true`)
-            }
+
+        if (option.tsConfig) {
             if (!config.resolve.plugins) { config.resolve.plugins = [] }
             config.resolve.plugins.push(new TsconfigPathsPlugin({
-                configFile: option.tsConfigPath
+                configFile: path.join(ylangDir, option.tsConfig)
             }))
             config.resolve.extensions.push('.ts')
             config.resolve.extensions.push('.tsx')
@@ -220,6 +214,7 @@ class Packer {
             } else {
                 config.entry = option.entry
             }
+
             config.output = Object.assign({
                 filename: '[name].bundle.js',
                 publicPath: '/',
@@ -228,6 +223,12 @@ class Packer {
                 jsonpFunction: 'Ylang',
                 crossOriginLoading: "anonymous",
             }, option.output)
+            if(/^\./.test(config.output.path)){
+                // 相对路径转绝对路径
+                let abpath = path.join(ylangDir, config.output.path)
+                config.output.path = abpath
+            }
+
         } else if (env == 'prod') {
             config = webpackMerge(config, {
                 optimization: {
@@ -296,23 +297,22 @@ class Packer {
             } else {
                 config.entry = option.entry
             }
-            if(!ylangExt.isEmpty()){
+            if(ylangExt && ylangExt.hasExternal()){
                 // 监测一个文件是否是外部模块，这里很重要
                 config.externals = [function(context, userRequest, callback){
                     let stat = fs.statSync(context)
                     if(stat.isDirectory()){
                         context = context + '/'
                     }
+                    // console.info('isExternal find file, ', context, userRequest)
+                    if(ylangExt.match(context)){
+                        return callback(null, 'root ""')
+                    }
                     let filepath = util.getTheRealFile(context, userRequest, cmdDir)
                     if(!filepath){
-                        // 如果没有，遇到一些情况是第三方npm包中的代码，引用一个根本没有的lib，try一下，如果异常又引用另外一个。这样，总会存在一个userRequest不存在的情况。所以降级一下，如果一个filepath不存在，就监测context是不是external，
-                        let isExt = ylangExt.match(context)
-                        if(isExt){
-                            return callback(null, 'root ""')
-                        }else{
-                            console.warn(chalk.bgYellow('Ylang WARN ===> ')+`cannot find file to determin weither is external!! context:${context}, userRequest:${userRequest}`)
-                            return callback()
-                        }
+                        // 如果没有，遇到一些情况是第三方npm包中的代码，引用一个根本没有的lib，try一下，如果异常又引用另外一个。这样，总会存在一个userRequest不存在的情况。所以降级一下，如果一个filepath不存在，就监测context是不是external，如果context不在external里面，就认为此模块不是external
+                        console.warn(chalk.bgYellow('Ylang WARN ===> ')+`cannot find file to determin weither is external!! context:${context}, userRequest:${userRequest}`)
+                        return callback()
                     }
                     let isExt = ylangExt.match(filepath)
                     if(isExt){
@@ -329,6 +329,11 @@ class Packer {
                 jsonpFunction: 'Ylang',
                 crossOriginLoading: "anonymous",
             }, option.output)
+            if(/^\./.test(config.output.path)){
+                // 相对路径转绝对路径
+                let abpath = path.join(ylangDir, config.output.path)
+                config.output.path = abpath
+            }
         } else {
             throw new Error(`option.env must be either 'dev' or 'prod'`);
         }

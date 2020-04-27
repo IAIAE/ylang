@@ -1,3 +1,6 @@
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const webpack = require('webpack');
+
 module.exports.getDefaultOption = function(sandboxConfig){
     let defaultOption = {
         mode: 'none',
@@ -30,7 +33,7 @@ module.exports.getDefaultOption = function(sandboxConfig){
                 test: /(\.js(x?)$|\.ts(x?)$)/,
                 exclude: /node_modules/,
                 use: [
-                    { 
+                    {
                         loader: 'babel-loader',
                         options: {
                             presets: ["babel-preset-env", "babel-preset-stage-0", "babel-preset-react"]
@@ -56,7 +59,7 @@ module.exports.getDefaultOption = function(sandboxConfig){
                     }
                 }, {
                     loader: 'postcss-loader',
-                    options: { 
+                    options: {
                         sourceMap: true,
                         plugins: [
                             require('autoprefixer')
@@ -82,6 +85,6 @@ module.exports.getDefaultOption = function(sandboxConfig){
         plugins: [
             new webpack.NamedChunksPlugin(chunk => (chunk.name || chunk.id)),
         ]
-    }  
+    }
     return defaultOption
 }

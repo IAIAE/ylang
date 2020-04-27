@@ -64,7 +64,7 @@ class SandboxNamedModulePlugin{
 
 						let absoluteId = module.libIdent({
 							context: compiler.options.context
-						});	
+						});
 
 						// external模块，我们需要将它的id变为标准的形式。
 						if(module.external === true){
@@ -79,25 +79,28 @@ class SandboxNamedModulePlugin{
 							// 获取这个external模块的路径
 							let userRequest = module.userRequest
 							let context = module.issuer.resource
+							if(path.extname(context)){
+								context = path.dirname(context)
+							}
+							// console.info('sandplugin find file ', context, userRequest)
 							let userReqFilepath = util.getTheRealFile(context, userRequest, cmdDir)
 							let exItem = options.externals.match(userReqFilepath)
 							if(exItem){
 								if(!exUsedIds[exItem.sign]){exUsedIds[exItem.sign] = new Set()}
-								let relativePath = path.relative(exItem.req, userReqFilepath)
+								let relativePath = path.relative(exItem.root, userReqFilepath)
 								let hashId = getHashId(relativePath, exUsedIds[exItem.sign])
 								module.id = idWithSign(exItem.sign, hashId)
 								exUsedIds[exItem.sign].add(hashId)
-
 							}else{
 								module.id = absoluteId;
 							}
 							return;
 						}
 
-						
-						
+
+
 						// 非external模块
-						let rule = matchSandbox(options.sandbox, module)	
+						let rule = matchSandbox(options.sandbox, module)
 						if(rule){
 							if(!rule.sign){
 								throw new Error(`${PLUGIN_NAME}:: option.sandbox.sign mustn't be null!!!!`)
@@ -139,7 +142,7 @@ class SandboxNamedModulePlugin{
 								module.id = idWithSign(hashId, options.sandbox.sign+'-outer')
 								usedIds.add(hashId);
 							}
-						}	
+						}
 					}
 				});
 			});

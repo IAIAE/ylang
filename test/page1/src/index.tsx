@@ -1,5 +1,5 @@
-import React from '../base/node_modules/react'
-import {Button, message} from '../base/node_modules/antd'
+import React from '../../base/node_modules/react'
+import {Button, message} from '../../base/node_modules/antd'
 
 const style = require('./index.less')
 export type Props = {

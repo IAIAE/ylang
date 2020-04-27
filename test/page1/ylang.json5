@@ -1,0 +1,31 @@
+{
+    // 基础的webpack工程配置
+    env: 'dev',
+    output: {
+        path: './dist',
+    },
+    cssFilenamePattern: '[name].sand.[contenthash:10].css',  // 导出css的文件名命名格式
+    tsConfig: './tsconfig.json',  // tsconfig.json的路径，必填
+
+    // 生成一个通用的入口js文件，框架选react(目前也只支持react框架)，默认去render sandbox里面指定的入口组件
+    // testEntry: 'react',
+
+    customizedTestEntry: {
+        entry: {
+            index: './src/entry.ts',
+        },
+        html: './src/entry.html',
+    },
+
+    // 声明自己的沙箱模块
+    sandbox: {
+        root: "./src",
+        main: "./index.tsx",
+        sign: "page1"
+    },
+    // 申明外部的沙箱模块依赖
+    external: [{
+        sign: 'base',
+        root: '../base'
+    }],
+}

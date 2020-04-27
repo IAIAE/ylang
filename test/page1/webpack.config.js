@@ -3,4 +3,6 @@ const path = require('path')
 
 let webpackConfig = Packer.config()
 
-// module.exports = webpackConfig
+// console.info('webpack config is ', webpackConfig)
+
+module.exports = webpackConfig

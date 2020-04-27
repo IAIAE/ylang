@@ -17,7 +17,7 @@ export default class App extends React.Component<Props, any>{
             <div className={style.title}>Hello ylang!</div>
             <div className={style.line}></div>
             <div className={style.container}>
-                this is container
+                hello world
             </div>
         </div>
     }
