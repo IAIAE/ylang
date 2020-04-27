@@ -1,5 +1,4 @@
 {
-    "env": "dev",
     "output": {
         "path": "./dist",
     },

@@ -20,7 +20,6 @@ const cmdDir = process.cwd()
 
 function checkOption(option) {
     if(!option.output || !option.output.path){ paramNeed('output.path')}
-    if(!option.env){paramNeed('env')}
 }
 
 function paramNeed(key) {
@@ -30,6 +29,15 @@ function paramNeed(key) {
 
 
 class Packer {
+    static env(val){
+        if(val == 'prod'){
+            this._env = 'prod'
+        }else if(val == 'dev'){
+            this._env = 'dev'
+        }else {
+            throw new Error('Ylang error:: Packer.env() must either "dev" or "prod". but got '+val)
+        }
+    }
     static config(option, ylangJsonPath) {
         if(!option){
             let ylangJsonPath = path.join(cmdDir, './ylang.json5')
@@ -74,7 +82,7 @@ class Packer {
          * 打包的目标环境，dev模式基本上可以看成是正常的打包，
          * prod模式会进行sandbox拆分，细节相对复杂得多
          */
-        let env = option.env || 'dev'
+        let env = this._env || option.env || 'dev'
 
         /**
          * 外部模块的申明
