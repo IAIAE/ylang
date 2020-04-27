@@ -37,6 +37,7 @@ class Packer {
         }else {
             throw new Error('Ylang error:: Packer.env() must either "dev" or "prod". but got '+val)
         }
+        return this;
     }
     static config(option, ylangJsonPath) {
         if(!option){
