@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var little_loader_1 = require("little-loader");
+var lloader = require("little-loader");
 var cssCache = {};
 var jsCache = {};
 /**
@@ -73,7 +73,7 @@ function loadjs(url, chunkName) {
         if (jsCache[url]) {
             return done({ ret: 0, data: null });
         }
-        little_loader_1.default(url, function (err) {
+        lloader(url, function (err) {
             if (err) {
                 console.error('loadjs network error:', err);
                 return done({

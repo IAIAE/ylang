@@ -1,5 +1,5 @@
 import { CommonReturn } from "./types";
-import lloader from 'little-loader'
+import * as lloader from 'little-loader'
 
 let cssCache = {}
 let jsCache = {}

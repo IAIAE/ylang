@@ -1,9 +1,9 @@
 {
   "name": "ylang-runtime",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "a webpack based packer for providing sandbox for javascript",
   "main": "lib/index.js",
-  "types": "types/index.d.ts",
+  "types": "typings/index.d.ts",
   "scripts": {
     "build": "tsc"
   },
