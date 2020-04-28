@@ -100,7 +100,7 @@ function goDeepExternal(externalItem, ylangFilepath, cmdDir, cache){
                 }
                 cache[npmdir] = {
                     root: npmdir,
-                    sign: externalItem.sign
+                    sign: externalItem.sign,
                 }
             })
         }

@@ -315,7 +315,9 @@ class Packer {
                     }
                     // console.info('isExternal find file, ', context, userRequest)
                     if(ylangExt.match(context)){
-                        return callback(null, 'root ""')
+                        // 不在乎返回什么，只需要每一个外部引用都有一个唯一的返回即可
+                        // 因为webpack会对返回内容相同的外部模块计算一次id，那样的话，不同的外部模块的id就相同了。所以只需保证不同外部模块不同返回即可，sandbox插件之后会针对不同外部模块计算不同id
+                        return callback(null, `root "${context+'@@'+userRequest}"`)
                     }
                     let filepath = util.getTheRealFile(context, userRequest, cmdDir)
                     if(!filepath){
@@ -325,7 +327,9 @@ class Packer {
                     }
                     let isExt = ylangExt.match(filepath)
                     if(isExt){
-                        return callback(null, 'root ""')
+                        // 不在乎返回什么，只需要每一个外部引用都有一个唯一的返回即可
+                        // 因为webpack会对返回内容相同的外部模块计算一次id，那样的话，不同的外部模块的id就相同了。所以只需保证不同外部模块不同返回即可，sandbox插件之后会针对不同外部模块计算不同id
+                        return callback(null, `root "${filepath}"`)
                     }
                     callback()
                 }]
