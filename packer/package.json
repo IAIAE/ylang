@@ -1,6 +1,6 @@
 {
     "name": "ylang",
-    "version": "0.1.2",
+    "version": "0.1.5",
     "description": "a webpack based packer for providing sandbox for javascript",
     "main": "index.js",
     "scripts": {

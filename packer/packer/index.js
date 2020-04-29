@@ -140,8 +140,8 @@ class Packer {
                 debug: option.debug || false,
                 /**
                  * [{
-                    // 相对于root.dir指定的文件夹路径
-                    root: path.resolve(__dirname, '../src/pages/home-page'),
+                    // 相对于ylang.json5指定的文件夹路径
+                    root: './src',
                     sign: 'home-page',  // sign必须全局唯一
                     }]
                  */

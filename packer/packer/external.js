@@ -47,6 +47,7 @@ function goDeepExternal(externalItem, ylangFilepath, cmdDir, cache){
         if(!cache[externalItem.sign]){
             cache[targetYlangSandboxRoot] = cache[externalItem.sign] = {
                 root: targetYlangSandboxRoot,
+                main: ylangJson.sandbox.main,
                 ylang: targetYlang,
                 sign: externalItem.sign
             }
@@ -60,7 +61,8 @@ function goDeepExternal(externalItem, ylangFilepath, cmdDir, cache){
                     throw new Error(`${targetYlang} wants to export npm package ${name}, where is already externals by ${cache[npmdir].sign}`)
                 }
                 cache[npmdir] = {
-                    root: npmdir,
+                    root: targetYlangSandboxRoot,
+                    main: ylangJson.sandbox.main,
                     sign: externalItem.sign
                 }
             })
@@ -85,6 +87,7 @@ function goDeepExternal(externalItem, ylangFilepath, cmdDir, cache){
         if(!cache[externalItem.sign]){
             cache[targetYlangSandboxRoot] = cache[externalItem.sign] = {
                 root: targetYlangSandboxRoot,
+                main: ylangJson.sandbox.main,
                 ylang: targetYlang,
                 sign: externalItem.sign
             }
@@ -99,7 +102,8 @@ function goDeepExternal(externalItem, ylangFilepath, cmdDir, cache){
                     throw new Error(`${targetYlang} wants to export npm package ${name}, where is already externals by ${cache[npmdir].sign}`)
                 }
                 cache[npmdir] = {
-                    root: npmdir,
+                    root: targetYlangSandboxRoot,
+                    main: ylangJson.sandbox.main,
                     sign: externalItem.sign,
                 }
             })
