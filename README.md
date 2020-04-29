@@ -7,3 +7,7 @@ Ylang是一个前端javascript打包器，也可以认为是“微前端”的�
 包含了两个npm包，runtime里面是[ylang-runtime](https://github.com/IAIAE/ylang/tree/master/runtime)，而packer里面是[ylang](https://github.com/IAIAE/ylang/tree/master/packer)。
 
 请点击链接查看子文档
+
+# 注意
+
+**只能在mac\linux环境使用，因为目前path判断是用uinx形式的“/”，没有支持windows上的c:\\情况**
